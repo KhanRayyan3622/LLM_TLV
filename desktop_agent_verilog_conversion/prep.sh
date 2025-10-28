@@ -13,6 +13,17 @@ DIR=$1
 VERILOG_FILE=$2
 MODULE_NAME=$3
 
+# DIR and VERILOG_FILE must be an absolute path.
+if [[ "$DIR" != /* ]]; then
+  echo "ERROR: Directory path $DIR must be absolute."
+  exit 1
+fi
+
+if [[ "$VERILOG_FILE" != /* ]]; then
+  echo "ERROR: Verilog file path $VERILOG_FILE must be absolute."
+  exit 1
+fi
+
 # Fail if the directory already exists.
 if [[ -d "$DIR" ]]; then
   echo "ERROR: Directory $DIR already exists."
@@ -36,10 +47,12 @@ cp "$VERILOG_FILE" "$DIR/orig.sv"
 cp "$VERILOG_FILE" "$DIR/prepared.sv"
 cp "$VERILOG_FILE" "$DIR/wip.tlv"
 cp "$VERILOG_FILE" "$DIR/feved.tlv"
+cp "$VERILOG_FILE" "$DIR/feved.sv"
+chmod 400 "$DIR/feved.tlv"
 
 # Initialize status.md and tracker.md files.
 touch "$DIR/tracker.md"
-echo '{"task": "Preparation", "fev.sh": "none", "llm": ""}' > "$DIR/status.json"
+echo '{"task": "Preparation", "fev.sh": "none", "fev_cnt": 0, "llm": ""}' > "$DIR/status.json"
 sed "s|<ORIGINAL_FILE>|feved.sv|g; s|<MODIFIED_FILE>|wip.sv|g; s|<MODULE_NAME>|$MODULE_NAME|g" "./fev.eqy" > "$DIR/fev.eqy"
 sed "s|<ORIGINAL_FILE>|prepared.sv|g; s|<MODIFIED_FILE>|wip.sv|g; s|<MODULE_NAME>|$MODULE_NAME|g" "./fev.eqy" > "$DIR/fev_full.eqy"
 
@@ -52,6 +65,7 @@ EOF
 # Create a .gitignore to ignore tmp directory.
 cat > "$DIR/.gitignore" <<EOF
 tmp/
+unsuccessful/
 EOF
 
 echo "Created the following files in $DIR:"

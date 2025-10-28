@@ -87,8 +87,8 @@ for fev_full_eqy in pathlib.Path('.').glob(FEV_FULL_ALT_EQY_GLOB):
 
                         # Apply updates from wip_match_pairs to full_match_pairs.
                         for ml in wip_match_pairs:
-                            print(f"Updating full match for gold '{ml['gold']}' to gate '{ml['gate']}'")
-                            print(f"ml: {ml}")
+                            #print(f"Updating full match for gold '{ml['gold']}' to gate '{ml['gate']}'")
+                            #print(f"ml: {ml}")
                             wip_gate = ml['gate']
                             wip_gold = ml['gold']
                             if wip_gold in full_gate_to_index:
@@ -105,7 +105,7 @@ for fev_full_eqy in pathlib.Path('.').glob(FEV_FULL_ALT_EQY_GLOB):
 
                     # Inside match section, process line.
                     if line.startswith('gold-match '):
-                        print(f"Processing line in match section: {line.strip()}")
+                        #print(f"Processing line in match section: {line.strip()}")
                         parts = line.strip().split()
                         if len(parts) == 3:
                             gate = parts[2]

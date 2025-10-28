@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # 
-# Extract the instructions for a given task from conversion_tasks.md, or list all tasks.
-# Usage: python ./get_task.py '<task-title>'   # Output instructions for task.
-#        python ./get_task.py next             # Output instructions for the next task following that in status.json, and update status.json.
+# Extract the instructions for a given task from conversion_tasks.md, or list all tasks. The current task is defined in status.json.
+# Usage: python ./get_task.py '<task-title>'   # Output instructions for given task.
+#        python ./get_task.py current          # Output instructions for the current task, as defined in status.json.
+#        python ./get_task.py next             # Move on to the next task, updating status.json, and output its instructions.
 #        python ./get_task.py list             # List all task titles.
 #        python ./get_task.py summary          # Output title and summary for all tasks.
 # where <task-title> is the title of the task as it appears in conversion_tasks.md as `## Task: <task-title>`.
@@ -16,12 +17,21 @@ import json
 script_dir = __file__.rsplit("/", 1)[0]
 
 if len(sys.argv) != 2:
-    print("Usage: python ./get_task.py '<task-name>'")
+    print("Usage: python . /get_task.py <task/command>")
+    print("")
+    print("Formats:")
+    print("    python ./get_task.py list           # List all task names (from `conversion_tasks.md`).")
+    print("    python ./get_task.py summary        # Output name and summary for all tasks.")
+    print("    python ./get_task.py '<task-name>'  # Get instructions for the given task name.")
+    print("    python ./get_task.py current        # Get instructions for the current task (defined in `status.json`).")
+    print("    python ./get_task.py next           # Move on to and output the next task, updating `status.json`.")
     sys.exit(1)
 
 task_title = sys.argv[1]
 
-next = task_title == "next"
+current = task_title == "current"
+next = task_title.startswith("next")
+force_next = task_title == "next!"
 list = task_title == "list"
 summary = task_title == "summary"
 
@@ -29,7 +39,7 @@ summary = task_title == "summary"
 current_task = None
 in_current_task = False
 
-if next:
+if next or current:
     # The current directory must contain status.json.
     if not os.path.isfile(f"status.json"):
         print("ERROR: status.json not found.")
@@ -46,6 +56,9 @@ if next:
     if not current_task:
         print("ERROR: status.json does not contain 'task'.")
         sys.exit(1)
+    # Translate "current" to the actual current task title (then, its no longer a special case).
+    if task_title == "current":
+        task_title = current_task
 
 # Find conversion_tasks.md in the directory of this script.
 with open(f"{script_dir}/conversion_tasks.md", "r") as f:
@@ -75,14 +88,34 @@ with open(f"{script_dir}/conversion_tasks.md", "r") as f:
                             # We were in the current task, and now we are at the next task,
                             # which is the one we're looking for.
                             in_current_task = False
-                            task_title = title
-                            # Reset status.json to reflect the new next task.
-                            new_status = {}
-                            new_status["task"] = task_title
-                            new_status["fev.sh"] = "none"
-                            new_status["llm"] = ""
-                            with open(f"status.json", "w") as f_status:
-                                json.dump(new_status, f_status, indent=4)
+                            # Move on to and report the next task, but only if `wip.tlv` matches `feved.tlv` and
+                            # the last task was completed successfully or it was not run for this task (nothing to be done).
+                            # When the agent tries to move on too early, this is a good indication that it has
+                            # forgotten its mission in life, so this is a good time to remind it.
+                            # Run diff to check if wip.tlv matches feved.tlv.
+                            fev_status = status.get("fev.sh", "")
+                            diff_status = os.system("diff -q wip.tlv feved.tlv > /dev/null 2>&1")
+                            if force_next or ((diff_status == 0) and (fev_status == "none" or fev_status.startswith("0:"))):
+                                # OK to move on to the next task.
+                                task_title = title
+                                # Reset status.json to reflect the new next task.
+                                new_status = {}
+                                new_status["task"] = task_title
+                                new_status["fev.sh"] = "none"
+                                new_status["fev_cnt"] = 0
+                                new_status["llm"] = ""
+                                with open(f"status.json", "w") as f_status:
+                                    json.dump(new_status, f_status, indent=4)
+                            else:
+                                print("")
+                                print("Whoa! Hold up! FEV was not run successfully.")
+                                print("Refusing to proceed to the next task.")
+                                print("")
+                                print("IMPORTANT:")
+                                print("You MUST reread 'desktop_agent_instructions.md', then review the current task by")
+                                print("running './scripts/get_task.py current' before continuing!!! You may, in the meantime,")
+                                print("update 'tracker.md' and 'status.json' and stop working to await guidance.")
+                                sys.exit(1)
                 in_task = title == task_title
         if in_task:
             print(line)

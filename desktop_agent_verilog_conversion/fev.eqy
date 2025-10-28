@@ -12,7 +12,12 @@ read_verilog -sv -formal <MODIFIED_FILE>
 
 [script]
 #chparam -set ...
-prep -top <MODULE_NAME> -flatten
+#prep -top <MODULE_NAME> -flatten
+hierarchy -top <MODULE_NAME> -check
+flatten
+proc -ifx
+#splitnets -ports
+clean
 setundef -anyseq
 #sim -w -clock clk -reset reset -rstlen 10 -n 10
 
@@ -31,7 +36,12 @@ setundef -anyseq
 [collect *]
 # Let EQY partition automatically.
 # If you want to force grouping by register name patterns, you can uncomment:
-# group .*
+# group *
+
+[partition *]
+# It can be useful to group outputs to avoid output cut points if outputs are used internally.
+#name outputs ^o_.*
+
 
 ############################################
 # STRATEGIES

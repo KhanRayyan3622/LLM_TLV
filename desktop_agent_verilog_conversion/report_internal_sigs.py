@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 # Usage: python3 report_internal_sigs.py <eqy_output_directory>
+# Reports internal and unused signals for non-passing EQY partitions
 
 import json, sys, os
 from pathlib import Path
@@ -9,21 +10,24 @@ def load_json(path: str):
     with open(path, "r") as f:
         return json.load(f)
 
-def get_internal(d: dict, keys: list[str]) -> dict:
+def get_signals(d: dict, keys: list[str], signal_type: str) -> dict:
+    """Extract signals of specified type ('internal' or 'unused') from module data"""
     for k in keys:
         v = d.get(k)
         if isinstance(v, dict):
-            internal = v.get("internal", {})
-            if isinstance(internal, dict):
-                return internal
+            signals = v.get(signal_type, {})
+            if isinstance(signals, dict):
+                return signals
     return {}
 
 def report_partition_internal_signals(partition_json_path: str, signal_name: str):
-    """Report internal signals for a given partition JSON file"""
+    """Report internal and unused signals for a given partition JSON file"""
     try:
         obj = load_json(partition_json_path)
-        gold_internal = get_internal(obj, ["gold_module", "gold_model"])
-        gate_internal = get_internal(obj, ["gate_module", "gate_model"])
+        gold_internal = get_signals(obj, ["gold_module", "gold_model"], "internal")
+        gate_internal = get_signals(obj, ["gate_module", "gate_model"], "internal")
+        gold_unused = get_signals(obj, ["gold_module", "gold_model"], "unused")
+        gate_unused = get_signals(obj, ["gate_module", "gate_model"], "unused")
 
         print(f"\n=== Internal signals for {signal_name} ===")
         print("Gold internal:")
@@ -33,6 +37,15 @@ def report_partition_internal_signals(partition_json_path: str, signal_name: str
         print("\nGate internal:")
         for name in sorted(gate_internal.keys()):
             print(f"  {name}")
+
+        print(f"\n=== Unused signals for {signal_name} ===")
+        print("Gold unused:")
+        for name in sorted(gold_unused.keys()):
+            print(f"  {name}")
+
+        print("\nGate unused:")
+        for name in sorted(gate_unused.keys()):
+            print(f"  {name}")
         print()
     except Exception as e:
         print(f"Error processing {partition_json_path}: {e}", file=sys.stderr)
@@ -41,8 +54,8 @@ def main():
     if len(sys.argv) != 2 or sys.argv[1] in ["-h", "--help"]:
         print(f"usage: {sys.argv[0]} <eqy_output_directory>", file=sys.stderr)
         print("", file=sys.stderr)
-        print("Reports internal signals for any EQY strategies that did not PASS.", file=sys.stderr)
-        print("Scans strategies/*/sby_seq/status files and reports internal signals", file=sys.stderr)
+        print("Reports internal and unused signals for any EQY strategies that did not PASS.", file=sys.stderr)
+        print("Scans strategies/*/sby_seq/status files and reports internal and unused signals", file=sys.stderr)
         print("from the corresponding partitions/*.json files.", file=sys.stderr)
         sys.exit(1)
 
@@ -62,37 +75,40 @@ def main():
         print(f"Error: partitions directory not found in {eqy_dir}", file=sys.stderr)
         sys.exit(1)
 
-    failed_signals = []
+    failed_partitions = []
     
-    # Scan all strategies for non-PASS status
-    for strategy_dir in strategies_dir.iterdir():
-        if strategy_dir.is_dir():
-            status_file = strategy_dir / "sby_seq" / "status"
+    # Scan all partitions in strategies/sby_seq/status for non-PASS status
+    for partition_dir in strategies_dir.iterdir():
+        if partition_dir.is_dir():
+            status_file = partition_dir / "sby_seq" / "status"
             if status_file.exists():
                 try:
                     with open(status_file, "r") as f:
                         status = f.read().strip()
                     if status != "PASS":
-                        signal_name = strategy_dir.name
-                        failed_signals.append((signal_name, status))
+                        signal_name = partition_dir.name
+                        failed_partitions.append((signal_name, status))
                 except Exception as e:
                     print(f"Error reading {status_file}: {e}", file=sys.stderr)
 
-    if not failed_signals:
-        print("All strategies passed - no internal signals to report")
+    if not failed_partitions:
+        print("All partitions passed!")
         return
 
-    print(f"Found {len(failed_signals)} non-passing strategies:")
-    for signal_name, status in failed_signals:
+    print(f"Found {len(failed_partitions)} non-passing partitions:")
+    for signal_name, status in failed_partitions:
         print(f"  {signal_name}: {status}")
 
-    # Report internal signals for each non-passing strategy
-    for signal_name, status in failed_signals:
+    # Report internal signals for each non-passing partition
+    for signal_name, status in failed_partitions:
         partition_json = partitions_dir / f"{signal_name}.json"
         if partition_json.exists():
             report_partition_internal_signals(str(partition_json), signal_name)
         else:
             print(f"Warning: partition JSON file not found for {signal_name}", file=sys.stderr)
+
+    print("Signals reported above are Verilog signals. Some may be generated from TL-Verilog.")
+    print("Address mismatches by editing *.eqy. Use TL-Verilog pipesignal names rather than generated names.")
 
 if __name__ == "__main__":
     main()
