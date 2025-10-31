@@ -17,7 +17,7 @@ When starting fresh, a script `desktop_agent_verilog_conversion/prep.sh` assists
 - `prepared.sv`, `wip.tlv`, and `feved.tlv`: as copies of <verilog-file>
 - `tracker.md`: Some initial empty categories (which you may change as appropriate).
 - `status.json`: to contain: `{"task": "Preparation", "fev.sh": "none", "llm": ""}
-- `fev.eqy` and `fev_full.eqy`: based on the template `fev.eqy` in `desktop_agent_verilog_conversion/`.
+- `fev.eqy` and `fev_full.eqy`: based on the template `fev.eqy` in `desktop_agent_verilog_conversion/fev/`.
 - `scripts/`: as a link to the `desktop_agent_verilog_conversion/` directory containing all helper scripts (e.g. `fev.sh` and `get_task.py`).
 
 <directory> and <verilog-file> must be given as absolute paths.
@@ -31,7 +31,7 @@ The MCP tools require the top-level module definition to be encapsulated in a si
 
 ### Latch-based Design
 
-It is expected that the original design is flip-flop-based, triggered by the rising edge of the clock. If logic is driven by the falling edge of the clock, it may be converted to transition a phase earlier or later as long as the output timing is preserved for FEV. Any changes like this that may impact the nature of the physical implementation should be noted in `tracker.md`.
+It is expected that the original design is flip-flop-based, triggered by the rising edge of the clock. If logic is driven by the falling edge of the clock, it may be converted to transition a phase earlier or later as long as the output timing is preserved for FEV. This may require the use of grouping/partitioning statements in EQY configurations. Any changes like this that may impact the nature of the physical implementation should be noted in `tracker.md`.
 
 ### Clock Gating/Enabling
 
@@ -39,7 +39,7 @@ Clock gating logic can be difficult to convert. TL-Verilog logic infers flip-flo
 
 There is a distinction between functional and non-functional clock gating/enabling. In functional gating/enabling the gating is functionally required. In non-functional clock gating, the gating condition is functionally a DONT-CARE. If we know the gating to be non-functional, we have more flexibility in the conversion.
 
-If the module has functional or non-functional clock gating/enable inputs, assume the input to be DONT-CARE (1'bX) if it is known to be non-functional. Comment on the use of clock gating or clock enabling in the original code and any modification to the code.
+If the module has clock gating/enable inputs that can be determined to be non-functional, assume the input to be DONT-CARE (1'bX). Comment on the use of clock gating or clock enabling in the original code and any modification to the code.
 
 ### No Tri-States
 
@@ -159,7 +159,7 @@ Completion: This task is complete only once all `if`/`else` chains and tick-ifde
 
 Update `tracker.md`, capturing a list of remaining `if` chains conditions and tick-ifdef/ifndef conditions that will need to be parameterized using M5.
 
-Be sure all changes for this task have been completed fully and that `./scripts/fev.sh` passes before reviewing `desktop_agent_instructions.md` and running `./scripts/get_task.py next`. If the task was not fully successful, wrap-up, update the user, and stop working, awaiting user guidance.
+Be sure all changes for this task have been completed fully and that `./scripts/fev.sh` passes before reviewing `instructions/desktop_agent_instructions.md` and running `./scripts/get_task.py next`. If the task was not fully successful, wrap-up, update the user, and stop working, awaiting user guidance.
 
 
 ## Task: Eliminate Split Assignments
@@ -185,7 +185,7 @@ assign addr = {addr_b31_b12, page_addr};
 
 New intermediate signals do not need to be matched in `fev*.eqy`.
 
-Be sure all changes for this task have been completed fully and that `./scripts/fev.sh` passes before reviewing `desktop_agent_instructions.md` and running `./scripts/get_task.py next`. If the task was not fully successful, wrap-up, update the user, and stop working, awaiting user guidance.
+Be sure all changes for this task have been completed fully and that `./scripts/fev.sh` passes before reviewing `instructions/desktop_agent_instructions.md` and running `./scripts/get_task.py next`. If the task was not fully successful, wrap-up, update the user, and stop working, awaiting user guidance.
 
 
 ## Task: If/Else and Case to Ternary
@@ -332,7 +332,7 @@ Refactor in a manner that minimizes common subexpressions. Create intermediate s
 
 The conversion to ternary expressions organizes the logic differently. Often, we have a matrix of conditions and signals, and we have a value to assign (or retain) in each cell of that matrix. The `if`/`else` chain or `case` breaks this matrix first by condition, then by signal. Using ternaries, organizes code first by signal, then by condition. There are pros and cons either way. When signals are tightly associated, the `if`/`else` organization can be more readable/maintainable. This can be mimicked using ternaries by assigning concatenations of signals to concatenations of expressions within the ternary. Consider building up concatenations versus replicating ternary structure, although, do not overuse this. It is easy to introduce bugs with this structure with mis-aligned bits in the concatenations, so it can be a maintenance issue. Find a reasonable balance based on the scenario.
 
-Be sure all changes for this task have been completed fully and that `./scripts/fev.sh` passes before reviewing `desktop_agent_instructions.md` and running `./scripts/get_task.py next`. If the task was not fully successful, wrap-up, update the user, and stop working, awaiting user guidance.
+Be sure all changes for this task have been completed fully and that `./scripts/fev.sh` passes before reviewing `instructions/desktop_agent_instructions.md` and running `./scripts/get_task.py next`. If the task was not fully successful, wrap-up, update the user, and stop working, awaiting user guidance.
 
 
 ## Task: Procedural For Loops
@@ -363,7 +363,7 @@ end
 
 Some tools object to `partial[i-1]`, which can index `partial[-1]`, which doesn't exist. The value is unused, but, to make these tools happy, it may be necessary to use `partial[(i+4-1)%4]` to keep the index in range.
 
-Be sure all changes for this task have been completed fully and that `./scripts/fev.sh` passes before reviewing `desktop_agent_instructions.md` and running `./scripts/get_task.py next`. If the task was not fully successful, wrap-up, update the user, and stop working, awaiting user guidance.
+Be sure all changes for this task have been completed fully and that `./scripts/fev.sh` passes before reviewing `instructions/desktop_agent_instructions.md` and running `./scripts/get_task.py next`. If the task was not fully successful, wrap-up, update the user, and stop working, awaiting user guidance.
 
 
 ## Task: Eliminate Always Comb
@@ -372,7 +372,7 @@ Summary: Transform `always_comb` to `assign`.
 
 Transform all assignments in `always_comb` and non-edge-triggered `always` blocks to `assign` statements. All `always_comb` blocks should be eliminated.
 
-Be sure all changes for this task have been completed fully and that `./scripts/fev.sh` passes before reviewing `desktop_agent_instructions.md` and running `./scripts/get_task.py next`. If the task was not fully successful, wrap-up, update the user, and stop working, awaiting user guidance.
+Be sure all changes for this task have been completed fully and that `./scripts/fev.sh` passes before reviewing `instructions/desktop_agent_instructions.md` and running `./scripts/get_task.py next`. If the task was not fully successful, wrap-up, update the user, and stop working, awaiting user guidance.
 
 
 ## Task: TLV File Format
@@ -433,7 +433,7 @@ Before testing, double-check your indentation (3 spaces for each scope; no tabs)
 
 In case you have difficulty with this task, the `\SV` region can be converted to an `\SV_plus` block incrementally, moving a subset of lines from the `\SV` block to the `\SV_plus` block in each step (keeping the overall order of the lines consistent).
 
-Be sure all changes for this task have been completed fully and that `./scripts/fev.sh` passes before reviewing `desktop_agent_instructions.md` and running `./scripts/get_task.py next`. If the task was not fully successful, wrap-up, update the user, and stop working, awaiting user guidance.
+Be sure all changes for this task have been completed fully and that `./scripts/fev.sh` passes before reviewing `instructions/desktop_agent_instructions.md` and running `./scripts/get_task.py next`. If the task was not fully successful, wrap-up, update the user, and stop working, awaiting user guidance.
 
 
 ## Task: Define M5 Configurations
@@ -610,7 +610,7 @@ This preserves the hierarchy, and allows testing with `./scripts/fev.sh` before 
 
 Convert all conditions to M5. This task is successfully complete when all generate `if` chains (including `if (1)`) and all use of tick-ifdef/ifndef have been eliminated.
 
-Be sure all changes for this task have been completed fully and that `./scripts/fev.sh` passes before reviewing `desktop_agent_instructions.md` and running `./scripts/get_task.py next`. If the task was not fully successful, wrap-up, update the user, and stop working, awaiting user guidance.
+Be sure all changes for this task have been completed fully and that `./scripts/fev.sh` passes before reviewing `instructions/desktop_agent_instructions.md` and running `./scripts/get_task.py next`. If the task was not fully successful, wrap-up, update the user, and stop working, awaiting user guidance.
 
 
 ## Task: Eliminate Multiple Assignments
@@ -686,7 +686,7 @@ Then run `rename_sigs.py` to apply the new names. If issues are reported, correc
 
 Apply these same naming conventions to generate `if`/`else` and `for` loop names as well. You can use `rename_sigs.py -t name1 name2 ...` to test these names. Do not change `clk`. This name is required by SandPiper for the global clock.
 
-Be sure all changes for this task have been completed fully and that `./scripts/fev.sh` passes before reviewing `desktop_agent_instructions.md` and running `./scripts/get_task.py next`. If the task was not fully successful, wrap-up, update the user, and stop working, awaiting user guidance.
+Be sure all changes for this task have been completed fully and that `./scripts/fev.sh` passes before reviewing `instructions/desktop_agent_instructions.md` and running `./scripts/get_task.py next`. If the task was not fully successful, wrap-up, update the user, and stop working, awaiting user guidance.
 
 
 ## Task: Signal Assignments to TLV Pipesignal Assignments
@@ -774,7 +774,7 @@ becomes:
       <<1$foo = $en ? $bar : $foo;
 ```
 
-Be sure all changes for this task have been completed fully and that `./scripts/fev.sh` passes before reviewing `desktop_agent_instructions.md` and running `./scripts/get_task.py next`. If the task was not fully successful, wrap-up, update the user, and stop working, awaiting user guidance.
+Be sure all changes for this task have been completed fully and that `./scripts/fev.sh` passes before reviewing `instructions/desktop_agent_instructions.md` and running `./scripts/get_task.py next`. If the task was not fully successful, wrap-up, update the user, and stop working, awaiting user guidance.
 
 
 ## Task: For Loop Assignments to TLV Scoped Assignments
@@ -900,7 +900,7 @@ You may notice generate `for` loops that evaluate 0 or 1 times (converted in a p
 
 This is a complex task, so tackle each signal independently until successful patterns are clear.
 
-Be sure all changes for this task have been completed fully and that `./scripts/fev.sh` passes before reviewing `desktop_agent_instructions.md` and running `./scripts/get_task.py next`. If the task was not fully successful, wrap-up, update the user, and stop working, awaiting user guidance.
+Be sure all changes for this task have been completed fully and that `./scripts/fev.sh` passes before reviewing `instructions/desktop_agent_instructions.md` and running `./scripts/get_task.py next`. If the task was not fully successful, wrap-up, update the user, and stop working, awaiting user guidance.
 
 
 ## Task: Non-vector Signals
@@ -977,7 +977,7 @@ If anything else remains in `\SV_plus`, see if you can figure out how to migrate
 
 For Verilog declarations contained within an M5 conditional, e.g., within a block beginning `m5_if_eq_block(m5_cond_w_1, 1, ['`, apply similar M5 conditioning to the declaration in `\TLV` context.
 
-Be sure all changes for this task have been completed fully and that `./scripts/fev.sh` passes before reviewing `desktop_agent_instructions.md` and running `./scripts/get_task.py next`. If the task was not fully successful, wrap-up, update the user, and stop working, awaiting user guidance.
+Be sure all changes for this task have been completed fully and that `./scripts/fev.sh` passes before reviewing `instructions/desktop_agent_instructions.md` and running `./scripts/get_task.py next`. If the task was not fully successful, wrap-up, update the user, and stop working, awaiting user guidance.
 
 
 ## Task: Convert Remaining Signals to Pipesignals
@@ -1015,7 +1015,7 @@ becomes:
 
 Signals assigned by an instantiated module, function, or macro are handle the same. (They are given a `$$` prefix and a range expression if non-boolean.) It may not be syntactically clear which signal arguments are inputs vs. outputs, so further investigation may be necessary for these.
 
-Be sure all changes for this task have been completed fully and that `./scripts/fev.sh` passes before reviewing `desktop_agent_instructions.md` and running `./scripts/get_task.py next`. If the task was not fully successful, wrap-up, update the user, and stop working, awaiting user guidance.
+Be sure all changes for this task have been completed fully and that `./scripts/fev.sh` passes before reviewing `instructions/desktop_agent_instructions.md` and running `./scripts/get_task.py next`. If the task was not fully successful, wrap-up, update the user, and stop working, awaiting user guidance.
 
 
 ## Task: Review Commenting and Structure
@@ -1024,7 +1024,7 @@ Summary: Ensure that the current code is organized and commented consistently wi
 
 Compare the structure and commenting of `prepared.sv` with that of `wip.tlv`. Make any adjustments necessary to reasonably align the structure and commenting of `wip.tlv` with that of `prepared.sv`. The code may have been substantially reordered during conversion, and the order should be reestablished. Preserve comments like `// if (cond)` above replicated scopes, as these are used by subsequent tasks. Balance the alignment goal with the goal of quality, favoring alignment where there is not a significant quality concern. A slight increase in commenting may be reasonable, where there is a particular need. No comments should be lost or modified without a very clear reason.
 
-Be sure all changes for this task have been completed fully and that `./scripts/fev.sh` passes before reviewing `desktop_agent_instructions.md` and running `./scripts/get_task.py next`. If the task was not fully successful, wrap-up, update the user, and stop working, awaiting user guidance.
+Be sure all changes for this task have been completed fully and that `./scripts/fev.sh` passes before reviewing `instructions/desktop_agent_instructions.md` and running `./scripts/get_task.py next`. If the task was not fully successful, wrap-up, update the user, and stop working, awaiting user guidance.
 
 
 ## Task: Consolidate the SV-TLV Interface
@@ -1093,7 +1093,7 @@ Be sure to include in the unified partition the gold output signal that is repla
 
 This task is successful only if there is no longer any use of Verilog signals in logic expressions (only in the input/outuput connections sections).
 
-Be sure all changes for this task have been completed fully and that `./scripts/fev.sh` passes before reviewing `desktop_agent_instructions.md` and running `./scripts/get_task.py next`. If the task was not fully successful, wrap-up, update the user, and stop working, awaiting user guidance.
+Be sure all changes for this task have been completed fully and that `./scripts/fev.sh` passes before reviewing `instructions/desktop_agent_instructions.md` and running `./scripts/get_task.py next`. If the task was not fully successful, wrap-up, update the user, and stop working, awaiting user guidance.
 
 
 ## Task: TLV Macro
@@ -1185,7 +1185,7 @@ A few things worth noting:
 
 It is probably easiest to tackle this in one shot, but, if you have difficulty, you can approach this incrementally, by first putting an empty macro in place, then, incrementally moving content from the `\TLV` body into the new macro. If there are M5 `m5_if_else` sections or TLV scopes, you'll have to be careful about preserving proper context. You can first split scopes in `\TLV` context, then migrate.
 
-Be sure all changes for this task have been completed fully and that `./scripts/fev.sh` passes before reviewing `desktop_agent_instructions.md` and running `./scripts/get_task.py next`. If the task was not fully successful, wrap-up, update the user, and stop working, awaiting user guidance.
+Be sure all changes for this task have been completed fully and that `./scripts/fev.sh` passes before reviewing `instructions/desktop_agent_instructions.md` and running `./scripts/get_task.py next`. If the task was not fully successful, wrap-up, update the user, and stop working, awaiting user guidance.
 
 
 ## Task: Review and Prepare Code for Handoff
@@ -1197,7 +1197,8 @@ To wrap up, compare your final code against `prepared.sv`. Compare the organizat
 Refactor your code such that:
 
 - logic is expressed in optimal ways for readability and minimal redundancy
-- all comments are appropriately preserved from `prepared.sv`
+- all comments are appropriately preserved from `prepared.sv`, including the license header if present
+- a note, such as "Converted to TL-Verilog by Claude.", is added (after the license, if present)
 - the code is well organized and its structure closely aligns with the original
 - the code follows best practices and has high quality
 - whitespace is used appropriately for best readability
@@ -1330,7 +1331,7 @@ To pass FEV with additional DONT-CARES, we have to swap the roles of gold and ga
 =======================================
 
 
-Be sure all changes for this task have been completed fully and that `./scripts/fev.sh` passes before reviewing `desktop_agent_instructions.md` and running `./scripts/get_task.py next`. If the task was not fully successful, wrap-up, update the user, and stop working, awaiting user guidance.
+Be sure all changes for this task have been completed fully and that `./scripts/fev.sh` passes before reviewing `instructions/desktop_agent_instructions.md` and running `./scripts/get_task.py next`. If the task was not fully successful, wrap-up, update the user, and stop working, awaiting user guidance.
 
 
 ## Task: When Conditions
@@ -1431,7 +1432,7 @@ This for loop defines `nn_gt1[0]` if `N` > 1 and nothing otherwise. References t
 
 The comment, `// if (N > 1)`, above, will be helpful to future tasks, so provide such comments.
 
-Be sure all changes for this task have been completed fully and that `./scripts/fev.sh` passes before reviewing `desktop_agent_instructions.md` and running `./scripts/get_task.py next`. If the task was not fully successful, wrap-up, update the user, and stop working, awaiting user guidance.
+Be sure all changes for this task have been completed fully and that `./scripts/fev.sh` passes before reviewing `instructions/desktop_agent_instructions.md` and running `./scripts/get_task.py next`. If the task was not fully successful, wrap-up, update the user, and stop working, awaiting user guidance.
 
 
 ## Task: Pass Module Parameters to TLV Macro

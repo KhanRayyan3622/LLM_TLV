@@ -4,7 +4,7 @@
 
 These instructions are the starting point for desktop coding agents, like Claude Code and GitHub Copilot, to convert Verilog to TL-Verilog. (We'll just say "Verilog", to mean Verilog or SystemVerilog.) Read this entire file and the preparation task instructions before proceeding.
 
-The user should instruct you as to which Verilog file/module to convert and what directory you should create (using a `prep.sh` script) or use for the conversion. Work only in that directory. You may also be asked to continue an ongoing conversion effort.
+The user should instruct you (the coding agent) as to which Verilog file/module to convert and what directory you should create (using a `prep.sh` script) or use for the conversion. Work only in that directory. You may also be asked to continue an ongoing conversion effort.
 
 ## Your Persona
 
@@ -117,7 +117,7 @@ The first conversion task prepares the conversion process. A little initial code
 
 The file structure is immediately converted to TLV file format, initially with everything in an `\SV` block. This is then converted to an `\SV_plus` block and signals are converted to pipesignals. Logic is pulled from the `\SV_plus` region and converted to `\TLV` expressions. Then code is organized into pipelines and pipestages, design hierarchy and/or transaction flow (`$ANY`) may be introduced.
 
-The file `conversion_tasks.md` contains detailed instructions for all tasks. Instead of reading `conversion_tasks.md` directly, use the script `./scripts/get_task.py`.
+The file `instructions/conversion_tasks.md` contains detailed instructions for all tasks. Instead of reading `instructions/conversion_tasks.md` directly, use the script `./scripts/get_task.py`.
 
 `get_task.py` Usage:
 
@@ -125,7 +125,7 @@ The file `conversion_tasks.md` contains detailed instructions for all tasks. Ins
 - `./scripts/get_task.py summary`: List task titles and one-line description.
 - `./scripts/get_task.py current`: Output instructions for the current task (given in `status.json`).
 - `./scripts/get_task.py next`: Finished with the current task; update all fields of `status.json` for the next task, and output its instructions.
-- `./scripts/get_task.py '<task-title>'`: Output instructions for the given task, identified by its title from the list or summary (extracted from `## Task: <task-title>` in `conversion_tasks.md`).
+- `./scripts/get_task.py '<task-title>'`: Output instructions for the given task, identified by its title from the list or summary (extracted from `## Task: <task-title>` in `instructions/conversion_tasks.md`).
 
 
 ## Matching Signals
@@ -143,7 +143,7 @@ It recommended to provide match statements for *all* changed signal names (unles
 
 Bottom line: whenever you make changes to `wip.tlv` that affect names of pre-existing signals, make corresponding changes in `fev.eqy`'s `[match ...]` section.
 
-Automation in `fev.sh` will maintain corresponding changes in `.eqy` files for full FEV runs. If something goes wrong with this automation, full FEV runs may fail. In this case, extra guidance is available to you in `full_fev_failed.md`. Your intervention will be needed for non-default full FEV to correct `fev_full_*.eqy` if signals differ due to the parameters.
+Automation in `fev.sh` will maintain corresponding changes in `.eqy` files for full FEV runs. If something goes wrong with this automation, full FEV runs may fail. In this case, extra guidance is available to you in `instructions/full_fev_failed.md`. Your intervention will be needed for non-default full FEV to correct `fev_full_*.eqy` if signals differ due to the parameters.
 
 Pipesignal paths are permitted (and should be used) in `.eqy` `[match ...]` sections. They must be full TL-Verilog paths from top-level scope. Before running FEV, SandPiper is used to preprocess these to Verilog signal paths. Use `\*` for indexes. (`\` avoids TL-Verilog's special interpretation as a concatenation, and the `*` passes along as an `.eqy` wildcard to match all indices (though this is untested).) For example, your match section might look like:
 
@@ -192,7 +192,7 @@ Exit status indicates how far the script got (though it should also be clear fro
 
 This exit status is reflected in `status.json` for every run.
 
-`fev.sh` also helps with the maintenance of signal match lists in `.eqy` files. It is up to you to maintain the incremental match list in `fev.eqy` as you refactor `wip.tlv`. For pipesignals, use TL-Verilog pipesignal reference syntax. `fev.sh` (with the aid of helper scripts) handles the rest. It extracts the `fev.eqy` match list after passing incremental FEV; it updates full match lists in `fev_full*.eqy` based on the extracted list; and before every FEV run it translates pipesignal paths to generated signal paths (using SandPiper). If full FEV runs fail, consult `full_fev_failed.md` for guidance on correcting match issues.
+`fev.sh` also helps with the maintenance of signal match lists in `.eqy` files. It is up to you to maintain the incremental match list in `fev.eqy` as you refactor `wip.tlv`. For pipesignals, use TL-Verilog pipesignal reference syntax. `fev.sh` (with the aid of helper scripts) handles the rest. It extracts the `fev.eqy` match list after passing incremental FEV; it updates full match lists in `fev_full*.eqy` based on the extracted list; and before every FEV run it translates pipesignal paths to generated signal paths (using SandPiper). If full FEV runs fail, consult `instructions/full_fev_failed.md` for guidance on correcting match issues.
 
 
 ## Workflow Details
@@ -214,7 +214,7 @@ Automation scripts (mostly `fev.sh`) will work with other files, including:
 - `fully_feved.tlv` and `full_sv/wip*.sv`: Checkpointed when full FEV passes (though they play no role in the process).
 - `fev_full*.eqy`: EQY configuration files for full FEV runs.
 
-You should not have to worry about these unless changes affect alternatively-parameterized models differently than the default parameterization, in which case you can consult `full_fev_failed.md`. But, if things go awry, you may need to poke around these files. With the exception of `fev_full*.eqy`, you should not modify these directly, but rather suggest changes to the user if the process gets off course. The same is true of automation scripts if you encounter bugs.
+You should not have to worry about these unless changes affect alternatively-parameterized models differently than the default parameterization, in which case you can consult `instructions/full_fev_failed.md`. But, if things go awry, you may need to poke around these files. With the exception of `fev_full*.eqy`, you should not modify these directly, but rather suggest changes to the user if the process gets off course. The same is true of automation scripts if you encounter bugs.
 
 Prepare:
 
@@ -227,11 +227,11 @@ When there is nothing more you could possibly do for the current task, `./script
 - Make incremental edits to `wip.tlv`.
 - Update `fev.eqy` to reflect any name changes to signals/pipesignals (including converting signals to pipesignals).
 - Run `./scripts/fev.sh` to run SandPiper and incremental/full FEV. (You may have access to SandPiper and FEV MCP tools, but use `./scripts/fev.sh` instead.)
-- If incremental FEV passes, but full FEV fails, consult `full_fev_failed.md` for guidance on fixing failures.
+- If incremental FEV passes, but full FEV fails, consult `instructions/full_fev_failed.md` for guidance on fixing failures.
 - If incremental FEV fails, update `status.json`, and edit `wip.tlv` until SandPiper and FEV pass. To establish tangible incremental forward progress, your changes must revert portions of your in-progress work, address issues that were just discovered, and/or attempt an experiment to learn something. You can revert manually, or use `./scripts/restore_history.sh latest` to revert back to the state of the last run that passed incremental FEV. This restores `status.json`, `*.tlv`, `*.eqy`, etc. from `history/latest`, deletes the `history/latest` directory and reruns `fev.sh`, which should recreate it. It first captures `*.*` in `unsuccessful/` for reference.
 - Upon incremental FEV success, update `status.json` and `tracker.md`.
-- If full FEV fails, consult `full_fev_failed.md` for additional guidance.
-- Use `./scripts/get_task.py next` when your current task is fully complete to move on to the next task, and continue refactoring (repeat) until done. It might be a good time to refresh you memory about your instructions in this file (`desktop_agent_instructions.md`).
+- If full FEV fails, consult `instructions/full_fev_failed.md` for additional guidance.
+- Use `./scripts/get_task.py next` when your current task is fully complete to move on to the next task, and continue refactoring (repeat) until done. It might be a good time to refresh you memory about your instructions in this file (`instructions/desktop_agent_instructions.md`).
 
 
 ## Strategies
@@ -265,7 +265,7 @@ In the face of failures, strategies include:
 - Reverting the most complex of your changes.
 - Starting again from the last successfully-FEVed code, applying a smaller change.
 - Mapping internal signals in the FEV configuration file.
-- Reviewing the task details in `conversion_tasks.md` versus your changes.
+- Reviewing the task details in `instructions/conversion_tasks.md` versus your changes.
 - Review these instructions to refresh your memory.
 
 

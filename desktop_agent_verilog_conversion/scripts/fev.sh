@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# A supporting script for the instructions in desktop_agent_instructions.md.
+# A supporting script for the instructions in instructions/desktop_agent_instructions.md.
 
 # Usage: ./fev.sh
 # Run from the directory containing the TLV file(s).
@@ -80,7 +80,7 @@ function update_status() {
   echo
   if [[ $status -ne 0 ]]; then
     echo "Try a smaller change, or, if you are having trouble making forward progress,"
-    echo "reread the instructions in 'desktop_agent_instructions.md' for ideas and double-check your work."
+    echo "reread the instructions in 'instructions/desktop_agent_instructions.md' for ideas and double-check your work."
   fi
   echo 'Remember to update the `llm` property of `status.json` and possibly `tracker.md` to reflect:'
   echo 'your progress, and continue the task.'
@@ -184,7 +184,7 @@ function run_fev() {
       echo
     fi
     if [[ $job != "incremental_fev" ]]; then
-      echo "Fix FEV failures before further refactoring. See 'full_fev_failed.md' for guidance."
+      echo "Fix FEV failures before further refactoring. See 'instructions/full_fev_failed.md' for guidance."
     fi
   fi
   return $status
@@ -247,7 +247,7 @@ if [[ $NEED_FULL_FEV == true ]]; then
     echo "If you made these changes to address failures with non-default parameters, no worries."
     echo "Otherwise, it is always best to resolve full FEV failures before proceeding. We'll test your"
     echo "new changes anyway. In case of failure, it is recommended to revert wip.tlv to feved.tlv and"
-    echo "get full FEV passing. Reference 'full_fev_failed.md' for guidance."
+    echo "get full FEV passing. Reference 'instructions/full_fev_failed.md' for guidance."
     # Keep the old history, even though full FEV failed.
     NEED_FULL_FEV=false
   else

@@ -3,7 +3,7 @@
 # Usage: ./prep.sh <directory> <verilog-file> <module-name>
 
 # Create and prepare the given directory for Verilog -> TL-Verilog code conversion
-# as described in desktop_agent_instructions.md.
+# as described in instructions/desktop_agent_instructions.md.
 
 # Absolute path to the directory containing this script.
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -39,8 +39,10 @@ fi
 # Create the work directory and its temporary subdirectory.
 mkdir -p "$DIR/tmp"
 
-# Create a link back to the script directory.
+# Create links back to the main directories.
 ln -s "$script_dir" "$DIR/scripts"
+ln -s "$script_dir/../fev" "$DIR/fev"
+ln -s "$script_dir/../instructions" "$DIR/instructions"
 
 # Copy the Verilog file to prepared.sv (also orig.sv, wip.sv, feved.sv).
 cp "$VERILOG_FILE" "$DIR/orig.sv"
@@ -50,11 +52,11 @@ cp "$VERILOG_FILE" "$DIR/feved.tlv"
 cp "$VERILOG_FILE" "$DIR/feved.sv"
 chmod 400 "$DIR/feved.tlv"
 
-# Initialize status.md and tracker.md files.
+# Initialize status.md, tracker.md, fev.eqy, and fev_full.eqy.
 touch "$DIR/tracker.md"
 echo '{"task": "Preparation", "fev.sh": "none", "fev_cnt": 0, "llm": ""}' > "$DIR/status.json"
-sed "s|<ORIGINAL_FILE>|feved.sv|g; s|<MODIFIED_FILE>|wip.sv|g; s|<MODULE_NAME>|$MODULE_NAME|g" "./fev.eqy" > "$DIR/fev.eqy"
-sed "s|<ORIGINAL_FILE>|prepared.sv|g; s|<MODIFIED_FILE>|wip.sv|g; s|<MODULE_NAME>|$MODULE_NAME|g" "./fev.eqy" > "$DIR/fev_full.eqy"
+sed "s|<ORIGINAL_FILE>|feved.sv|g; s|<MODIFIED_FILE>|wip.sv|g; s|<MODULE_NAME>|$MODULE_NAME|g" "$script_dir/../fev/fev.eqy" > "$DIR/fev.eqy"
+sed "s|<ORIGINAL_FILE>|prepared.sv|g; s|<MODIFIED_FILE>|wip.sv|g; s|<MODULE_NAME>|$MODULE_NAME|g" "$script_dir/../fev/fev.eqy" > "$DIR/fev_full.eqy"
 
 # Create config.json with top module name
 cat > "$DIR/config.json" <<EOF

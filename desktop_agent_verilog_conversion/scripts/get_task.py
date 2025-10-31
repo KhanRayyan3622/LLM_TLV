@@ -1,14 +1,4 @@
 #!/usr/bin/env python3
-# 
-# Extract the instructions for a given task from conversion_tasks.md, or list all tasks. The current task is defined in status.json.
-# Usage: python ./get_task.py '<task-title>'   # Output instructions for given task.
-#        python ./get_task.py current          # Output instructions for the current task, as defined in status.json.
-#        python ./get_task.py next             # Move on to the next task, updating status.json, and output its instructions.
-#        python ./get_task.py list             # List all task titles.
-#        python ./get_task.py summary          # Output title and summary for all tasks.
-# where <task-title> is the title of the task as it appears in conversion_tasks.md as `## Task: <task-title>`.
-
-# Extract text from `## Task: <task-title>` to the next `## Task:` or end of file.
 
 import sys
 import os
@@ -17,14 +7,20 @@ import json
 script_dir = __file__.rsplit("/", 1)[0]
 
 if len(sys.argv) != 2:
-    print("Usage: python . /get_task.py <task/command>")
+    print("get_task.py Help")
+    print("----------------")
+    print("Extract the instructions for a given task from conversion_tasks.md, or list all tasks.")
+    print("Run from a module conversion directory. The current task is defined in ./status.json.")
+    print("")
+    print("Usage: ./scripts/get_task.py <task/command>")
     print("")
     print("Formats:")
-    print("    python ./get_task.py list           # List all task names (from `conversion_tasks.md`).")
-    print("    python ./get_task.py summary        # Output name and summary for all tasks.")
-    print("    python ./get_task.py '<task-name>'  # Get instructions for the given task name.")
-    print("    python ./get_task.py current        # Get instructions for the current task (defined in `status.json`).")
-    print("    python ./get_task.py next           # Move on to and output the next task, updating `status.json`.")
+    print("    ./scripts/get_task.py list           # List all task names (from `conversion_tasks.md`).")
+    print("    ./scripts/get_task.py summary        # Output name and summary for all tasks.")
+    print("    ./scripts/get_task.py '<task-name>'  # Get instructions for the given task name, given as it appears in")
+    print("                                         # conversion_tasks.md as `## Task: <task-name>`.")
+    print("    ./scripts/get_task.py current        # Get instructions for the current task (defined in `status.json`).")
+    print("    ./scripts/get_task.py next           # Move on to and output the next task, updating `status.json`.")
     sys.exit(1)
 
 task_title = sys.argv[1]
@@ -34,6 +30,8 @@ next = task_title.startswith("next")
 force_next = task_title == "next!"
 list = task_title == "list"
 summary = task_title == "summary"
+
+task_printed = False
 
 
 current_task = None
@@ -60,8 +58,8 @@ if next or current:
     if task_title == "current":
         task_title = current_task
 
-# Find conversion_tasks.md in the directory of this script.
-with open(f"{script_dir}/conversion_tasks.md", "r") as f:
+# Find conversion_tasks.md in the instructions directory.
+with open(f"{script_dir}/../instructions/conversion_tasks.md", "r") as f:
     # Read line-by-line, matching `## Task: `
     in_task = False
     while (line := f.readline()) and not line.startswith("# EOF"):
@@ -112,14 +110,36 @@ with open(f"{script_dir}/conversion_tasks.md", "r") as f:
                                 print("Refusing to proceed to the next task.")
                                 print("")
                                 print("IMPORTANT:")
-                                print("You MUST reread 'desktop_agent_instructions.md', then review the current task by")
+                                print("You MUST reread 'instructions/desktop_agent_instructions.md', then review the current task by")
                                 print("running './scripts/get_task.py current' before continuing!!! You may, in the meantime,")
                                 print("update 'tracker.md' and 'status.json' and stop working to await guidance.")
                                 sys.exit(1)
                 in_task = title == task_title
         if in_task:
             print(line)
+            task_printed = True
+
+# Print project-specific instructions for this task, if they exist.
+if task_printed:
+    instructions_file = f"../project_instructions/project_specific_instructions.md"
+    if os.path.isfile(instructions_file):
+        # Extract instructions from `## Task: <task-name>` until next `## `.
+        with open(instructions_file, "r") as f:
+            in_task = False
+            while (line := f.readline()):
+                line = line.rstrip()
+                if line.startswith("## "):
+                    if line.startswith("## Task: "):
+                        title = line[len("## Task: "):]
+                        in_task = title == task_title
+                        print("")
+                        print(f"There are some project-specific instructions for this task:")
+                    if in_task:
+                        print(line)
+                elif in_task:
+                    print(line)
 
 if next and in_current_task:
+    print("")
     print("Congratulations! You have completed the final task!")
     sys.exit(0)
