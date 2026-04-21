@@ -34,6 +34,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # Remove network tools that could be used for reconnaissance (but keep essential shells)
     && rm -f /usr/bin/nc /usr/bin/netcat /bin/netstat /usr/bin/ss || true
 
+RUN apt-get update && apt-get install -y jq
+
 # Install basic Python tools
 RUN pip3 install --no-cache-dir --break-system-packages \
     requests \

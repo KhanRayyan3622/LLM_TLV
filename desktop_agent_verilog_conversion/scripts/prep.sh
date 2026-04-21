@@ -40,9 +40,9 @@ fi
 mkdir -p "$DIR/tmp"
 
 # Create links back to the main directories.
-ln -s "$script_dir" "$DIR/scripts"
-ln -s "$script_dir/../fev" "$DIR/fev"
-ln -s "$script_dir/../instructions" "$DIR/instructions"
+ln -sr "$script_dir" "$DIR/scripts"
+ln -sr "$script_dir/../fev" "$DIR/fev"
+ln -sr "$script_dir/../instructions" "$DIR/instructions"
 
 # Copy the Verilog file to prepared.sv (also orig.sv, wip.sv, feved.sv).
 cp "$VERILOG_FILE" "$DIR/orig.sv"
