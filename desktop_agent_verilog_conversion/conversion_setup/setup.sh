@@ -22,5 +22,5 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 mkdir -p tlv/regress
 cp -r "$SCRIPT_DIR"/env tlv
 cp -r "$SCRIPT_DIR"/instructions tlv/project_instructions
-chmod -w -R tlv/env/Dockerfile
+chmod -w tlv/env/Dockerfile
 echo "✅ Baseline conversion setup complete, producing tlv/env/*, tlv/instructions/*, and empty tlv/regress/."

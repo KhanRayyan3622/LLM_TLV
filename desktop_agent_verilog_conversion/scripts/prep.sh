@@ -39,10 +39,19 @@ fi
 # Create the work directory and its temporary subdirectory.
 mkdir -p "$DIR/tmp"
 
+# Portable relative symlink helper. `ln -sr` is GNU coreutils only; macOS BSD ln has no -r.
+make_relative_symlink() {
+  local target="$1"
+  local link="$2"
+  local rel
+  rel=$(python3 -c "import os,sys; print(os.path.relpath(sys.argv[1], sys.argv[2]))" "$target" "$(dirname "$link")")
+  ln -s "$rel" "$link"
+}
+
 # Create links back to the main directories.
-ln -sr "$script_dir" "$DIR/scripts"
-ln -sr "$script_dir/../fev" "$DIR/fev"
-ln -sr "$script_dir/../instructions" "$DIR/instructions"
+make_relative_symlink "$script_dir" "$DIR/scripts"
+make_relative_symlink "$script_dir/../fev" "$DIR/fev"
+make_relative_symlink "$script_dir/../instructions" "$DIR/instructions"
 
 # Copy the Verilog file to prepared.sv (also orig.sv, wip.sv, feved.sv).
 cp "$VERILOG_FILE" "$DIR/orig.sv"
