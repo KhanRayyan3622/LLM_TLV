@@ -170,3 +170,7 @@ HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
 
 # Security: Use dumb-init for proper signal handling and process reaping
 CMD ["dumb-init", "--", "/home/claude/start-claude.sh"]
+RUN touch /home/claude/.makerchip_accepted
+USER root
+RUN touch /root/.makerchip_accepted
+USER claude
