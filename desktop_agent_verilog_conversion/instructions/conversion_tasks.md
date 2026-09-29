@@ -113,6 +113,23 @@ time any `>>1$signal` is written, SandPiper emits `always_ff @(posedge clk)`.
 If `clk` is not yet declared, you will get an unresolved signal error
 mid-conversion. Adding the bridge at setup time prevents this entirely.
 
+**Critical: Preserve the Reset Synchronizer Block in All Subsequent Tasks**
+
+When the reset is asynchronous and you have introduced a two-flip-flop 
+synchronizer to produce a synchronous `resetn` signal, that synchronizer 
+block is complete and must not be modified by any subsequent conversion task.
+
+Specifically: any `always_ff` block whose sensitivity list contains both a 
+clock edge and a reset edge (e.g. `@(posedge clk or negedge rstz)`) that 
+produces a synchronous reset signal (`resetn`, `resetn_meta`, or similar) 
+must be left exactly as written. Do not convert it to ternary expressions. 
+Do not rename its signals. Do not restructure it in any way.
+
+This block establishes the synchronous reset domain for all downstream 
+logic. It must remain as hand-written Verilog in `\SV_plus`. FEV cannot 
+detect behavioral errors caused by incorrectly refactoring this block, 
+which is why it must be preserved as-is.
+
 ## Task: Simplify Code Generation
 
 Summary: Where possible, remove logic from generate `if`/`else` blocks.

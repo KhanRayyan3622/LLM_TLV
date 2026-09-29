@@ -45,6 +45,11 @@ Throughout the conversion, you'll maintain:
 
 You'll modify `wip.tlv` and possibly `fev.eqy`, run `./scripts/fev.sh` to verify the changes, debug as necessary, and repeat until conversion is complete. Along the way, you will track your progress and discoveries in `status.json` and `tracker.md`. You will complete each task fully before moving on so that you or another agent can focus solely on one task at a time, trusting that earlier tasks are complete. When fully complete and reviewed, with tracking updated, use the command `./scripts/get_task.py next` to set up work on the next task, only when there is nothing more you could possibly do for the current task.
 
+**Async Reset Synchronizers:** Any `always_ff` block with an asynchronous 
+reset in its sensitivity list that establishes a synchronous internal reset 
+signal must not be modified by any task. Treat this block as read-only 
+infrastructure established during the Reset and Clock task.
+
 ## Status and Tracker
 
 `tracker.md` and `status.json` are your primary hand-off documents.
